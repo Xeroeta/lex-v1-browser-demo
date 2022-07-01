@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>AmazonLex</title>
+    <meta name="author" content="">
+    <meta name="description" content="LZB Voice Bot Demo">
+    <meta name="keywords" content="LZB Voice Bot Demo Widget">
+    <link rel="icon" type="image/png" href="favicon-32x32.png" sizes="32x32"/>
+    <link rel="icon" type="image/png" href="favicon-16x16.png" sizes="16x16"/>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="wrapper">
+<div class="audio-control">
+    <p id="audio-control" class="white-circle">
+        <img src="lex.png">
+        <canvas class="visualizer"></canvas>
+    </p>
+    <p><span id="message"></span></p>
+</div>
+<script src="https://sdk.amazonaws.com/js/aws-sdk-2.48.0.min.js"></script>
+<script src="./dist/aws-lex-audio.js" type="text/javascript"></script>
+<script src="renderer.js" type="text/javascript"></script>
+<script type="text/javascript">
+    var IdentityPoolId_1 = '<cognito pool id goes here>';
+    var waveform = window.Waveform();
+    var message = document.getElementById('message');
+    var config, conversation;
+    message.textContent = 'Passive';
+
+    document.getElementById('audio-control').onclick = function () {
+
+        AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+            IdentityPoolId: IdentityPoolId_1
+        });
+        AWS.config.region = 'us-east-1';
+
+        config = {
+            lexConfig: {
+                botName: 'LaZBoyLexOne',
+                botAlias: 'LatestVersion',
+                userId: 'userId'
+            }
+        };
+
+        conversation = new LexAudio.conversation(config, function (state) {
+            message.textContent = state + '...';
+            if (state === 'Listening') {
+                waveform.prepCanvas();
+            }
+            if (state === 'Sending') {
+                waveform.clearCanvas();
+            }
+        }, function (data) {
+            console.log('Lex Response Data: ', data);
+            console.log('Transcript: ', data.inputTranscript, ", Response: ", data.message);
+        }, function (error) {
+            message.textContent = error;
+        }, function (timeDomain, bufferLength) {
+            waveform.visualizeAudioBuffer(timeDomain, bufferLength);
+        });
+        conversation.advanceConversation();
+    };
+
+</script>
+</body>
+
+</html>
